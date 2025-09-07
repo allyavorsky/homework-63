@@ -3,7 +3,6 @@ const express = require("express");
 const session = require("express-session");
 const passport = require("passport");
 const bcrypt = require("bcrypt");
-
 const LocalStrategy = require("passport-local").Strategy;
 
 const app = express();
@@ -83,10 +82,21 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.post("/login", passport.authenticate("local"), (req, res) => {
+  res.send(`Ласкаво просимо, ${req.user.email}!`);
+});
+
+app.post("/logout", (req, res, next) => {
+  req.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    res.send("Ви успішно вийшли з системи");
+  });
+});
+
 app.get("/", (req, res) => {
-  res.send(
-    "<h1>Сервер Express. Passport перевіряє логін і пароль.</h1>"
-  );
+  res.send("<h1>Сервер Express. Готовий до login та logout.</h1>");
 });
 
 app.listen(PORT, () => {
