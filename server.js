@@ -8,6 +8,8 @@ const LocalStrategy = require("passport-local").Strategy;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(express.static("public"));
+
 const users = [];
 
 app.use(express.urlencoded({ extended: false }));
