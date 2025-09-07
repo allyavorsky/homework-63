@@ -61,6 +61,15 @@ passport.deserializeUser((id, done) => {
   done(null, user);
 });
 
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res
+    .status(401)
+    .send("Будь ласка, увійдіть, щоб отримати доступ до цього ресурсу");
+}
+
 app.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -95,8 +104,14 @@ app.post("/logout", (req, res, next) => {
   });
 });
 
+app.get("/protected", ensureAuthenticated, (req, res) => {
+  res.send(
+    `Привіт, ${req.user.email}! Це секретна інформація, доступна тільки для тебе.`
+  );
+});
+
 app.get("/", (req, res) => {
-  res.send("<h1>Сервер Express. Готовий до login та logout.</h1>");
+  res.send("<h1>Сервер Express. Захищений маршрут створено.</h1>");
 });
 
 app.listen(PORT, () => {
