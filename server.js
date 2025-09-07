@@ -2,8 +2,9 @@ require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const passport = require("passport");
-
 const bcrypt = require("bcrypt");
+
+const LocalStrategy = require("passport-local").Strategy;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,29 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+passport.use(
+  new LocalStrategy(
+    { usernameField: "email" },
+    async (email, password, done) => {
+      try {
+        const user = users.find((u) => u.email === email);
+        if (!user) {
+          return done(null, false, { message: "Неправильний email." });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+          return done(null, false, { message: "Неправильний пароль." });
+        }
+
+        return done(null, user);
+      } catch (error) {
+        return done(error);
+      }
+    }
+  )
+);
+
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
@@ -41,24 +65,18 @@ passport.deserializeUser((id, done) => {
 app.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const existingUser = users.find((u) => u.email === email);
     if (existingUser) {
       return res.status(400).send("Користувач з таким email вже існує");
     }
-
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser = {
       id: Date.now().toString(),
       email: email,
       password: hashedPassword,
     };
-
     users.push(newUser);
-
     console.log("Зареєстровані користувачі:", users);
-
     res.status(201).send("Користувача успішно зареєстровано");
   } catch (error) {
     res.status(500).send("Помилка на сервері");
@@ -66,7 +84,9 @@ app.post("/register", async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("<h1>Сервер Express. Готовий до реєстрації.</h1>");
+  res.send(
+    "<h1>Сервер Express. Passport перевіряє логін і пароль.</h1>"
+  );
 });
 
 app.listen(PORT, () => {
